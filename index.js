@@ -1,4 +1,4 @@
-module.exports = function (app, db) {
+module.exports = function (db, app) {
   var defaultKeyGen = function (req, path, method, lookup) {
     return 'ratelimit:' + path + ':' + method + ':' + lookup.map(function (item) {
         return item + ':' + item.split('.').reduce(function (prev, cur) {
@@ -59,7 +59,7 @@ module.exports = function (app, db) {
 
       });
     };
-    if (opts.method && opts.path) {
+    if (app) {
       app[opts.method](opts.path, middleware);
     }
     return middleware;
