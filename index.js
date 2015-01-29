@@ -11,12 +11,14 @@ module.exports = function (db, app) {
       if (opts.whitelist && opts.whitelist(req)) {
         return next();
       }
-      opts.lookup = Array.isArray(opts.lookup) ? opts.lookup : [opts.lookup];
       opts.onRateLimited = typeof opts.onRateLimited === 'function' ? opts.onRateLimited : function (req, res, next) {
         res.status(429).send('Rate limit exceeded');
       };
       opts.keyGenerator = typeof opts.keyGenerator === 'function' ? opts.keyGenerator : function(req) {
-        return defaultKeyGen(req, opts.path || req.path, (opts.method || req.method).toLowerCase(), opts.lookup);
+        opts.lookup = Array.isArray(opts.lookup) ? opts.lookup : [opts.lookup];
+        opts.method = (opts.method || req.method).toLowerCase();
+        opts.path = opts.path || req.path;
+        return defaultKeyGen(req, opts.path, opts.method, opts.lookup);
       };
       var key = opts.keyGenerator(req);
       db.get(key, function (err, limit) {
