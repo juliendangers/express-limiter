@@ -47,7 +47,7 @@ limiter(options)
  - `whitelist`: `function(req)` optional param allowing the ability to whitelist. return `boolean`, `true` to whitelist, `false` to passthru to limiter.
  - `skipHeaders`: `Boolean` whether to skip sending HTTP headers for rate limits ()
  - `ignoreErrors`: `Boolean` whether errors generated from redis should allow the middleware to call next().  Defaults to false.
- - `keyGenerator`: `function(req)` optional param to customize key generation for redis. Allows you to really limit every call /api instead of rate limiting each route under /api. Must return a String (using as a direct middleware makes using `path`, `method` and `lookup useless)
+ - `keyGenerator`: `function(req)` optional param to customize key generation for redis. Allows you to (e.g.) really limit every call to `/api` instead of rate limiting each route under `/api` separately. Must return a String (using as a direct middleware makes using `path`, `method` and `lookup` useless)
  - `onRateLimited`: `function(req, res, next)` optional param to define the behaviour of your choice when rate limit is reached
 
 ### Examples
