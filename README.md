@@ -10,13 +10,13 @@ var express = require('express')
 var app = express()
 var client = require('redis').createClient()
 
-var limiter = require('express-limiter')(app, client)
+var limiter = require('express-limiter')(client, app)
 
 /**
  * you may also pass it an Express 4.0 `Router`
  *
  * router = express.Router()
- * limiter = require('express-limiter')(router, client)
+ * limiter = require('express-limiter')(client, router)
  */
 
 limiter({
@@ -47,6 +47,8 @@ limiter(options)
  - `whitelist`: `function(req)` optional param allowing the ability to whitelist. return `boolean`, `true` to whitelist, `false` to passthru to limiter.
  - `skipHeaders`: `Boolean` whether to skip sending HTTP headers for rate limits ()
  - `ignoreErrors`: `Boolean` whether errors generated from redis should allow the middleware to call next().  Defaults to false.
+ - `keyGenerator`: `function(req)` optional param to customize key generation for redis. Allows you to really limit every call /api instead of rate limiting each route under /api. Must return a String (using as a direct middleware makes using `path`, `method` and `lookup useless)
+ - `onRateLimited`: `function(req, res, next)` optional param to define the behaviour of your choice when rate limit is reached
 
 ### Examples
 
@@ -103,12 +105,38 @@ limiter({
   skipHeaders: true
 })
 
+// custom redis keys
+limiter({
+  path: '/api/*',
+  method: 'get',
+  keyGenerator: function(req) {
+    return 'ratelimit:api:' + req.user.id
+  },
+  whitelist: function (req) {
+    return !!req.user.is_admin
+  }
+})
+
 ```
 
 ### as direct middleware
 
 ``` js
+// app param is now useless
+var limiter = require('express-limiter')(client)
+
 app.post('/user/update', limiter({ lookup: 'user.id' }), function (req, res) {
+  User.find(req.user.id).update(function (err) {
+    if (err) next(err)
+    else res.send('ok')
+  })
+})
+
+app.get('/user/*', limiter({
+    keyGenerator: function(req) {
+      return 'ratelimit:api:' + req.user.id
+    }
+  }), function (req, res) {
   User.find(req.user.id).update(function (err) {
     if (err) next(err)
     else res.send('ok')
