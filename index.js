@@ -1,11 +1,4 @@
 module.exports = function (db, app) {
-  var defaultKeyGen = function (req, path, method, lookup) {
-    return 'ratelimit:' + path + ':' + method + ':' + lookup.map(function (item) {
-        return item + ':' + item.split('.').reduce(function (prev, cur) {
-            return prev[cur];
-          }, req);
-      }).join(':');
-  };
   return function (opts) {
     var middleware = function (req, res, next) {
       if (opts.whitelist && opts.whitelist(req)) {
@@ -14,13 +7,14 @@ module.exports = function (db, app) {
       opts.onRateLimited = typeof opts.onRateLimited === 'function' ? opts.onRateLimited : function (req, res, next) {
         res.status(429).send('Rate limit exceeded');
       };
-      opts.keyGenerator = typeof opts.keyGenerator === 'function' ? opts.keyGenerator : function(req) {
-        opts.lookup = Array.isArray(opts.lookup) ? opts.lookup : [opts.lookup];
-        opts.method = (opts.method || req.method).toLowerCase();
-        opts.path = opts.path || req.path;
-        return defaultKeyGen(req, opts.path, opts.method, opts.lookup);
+      // default rate-limit by IP address & method & path
+      opts.lookup = typeof opts.lookup === 'function' ? opts.lookup : function (req) {
+        return [req.path, req.method, req.connection.remoteAddress];
       };
-      var key = opts.keyGenerator(req);
+      opts.keyFormatter = typeof opts.keyFormatter === 'function' ? opts.keyFormatter : function (parts) {
+        return "rateLimit:" + parts.join(':');
+      };
+      var key = opts.keyFormatter(opts.lookup(req));
       db.get(key, function (err, limit) {
         if (err && opts.ignoreErrors) {
           return next();
@@ -61,7 +55,7 @@ module.exports = function (db, app) {
 
       });
     };
-    if (app) {
+    if (app && opts.method && opts.path) {
       app[opts.method](opts.path, middleware);
     }
     return middleware;

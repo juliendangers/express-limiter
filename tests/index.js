@@ -13,7 +13,7 @@ describe('rate-limiter', function () {
   beforeEach(function () {
     express = require('express');
     app = express();
-    limiter = subject(app, redis);
+    limiter = subject(redis, app);
   });
 
   afterEach(function (done) {
@@ -27,7 +27,6 @@ describe('rate-limiter', function () {
     limiter({
       path: '/route',
       method: 'get',
-      lookup: ['connection.remoteAddress'],
       total: 10,
       expire: 1000 * 60 * 60
     });
@@ -82,7 +81,6 @@ describe('rate-limiter', function () {
       limiter({
         path: '/route',
         method: 'get',
-        lookup: ['connection.remoteAddress'],
         total: 0,
         expire: 1000 * 60 * 60,
         skipHeaders: true
@@ -116,7 +114,6 @@ describe('rate-limiter', function () {
       limiter({
         path: '/route',
         method: 'get',
-        lookup: ['connection.remoteAddress'],
         total: 10,
         expire: 1000 * 60 * 60,
         ignoreErrors: true
@@ -144,7 +141,6 @@ describe('rate-limiter', function () {
     it('is able to mount without `path` and `method`', function (done) {
       var clock = sinon.useFakeTimers();
       var middleware = limiter({
-        lookup: 'connection.remoteAddress',
         total: 3,
         expire: 1000 * 60 * 60
       });
