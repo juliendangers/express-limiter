@@ -1,6 +1,6 @@
 {
   "name": "express-limiter2",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "rate limiter middleware for express applications",
   "main": "index.js",
   "author": "Julien Crestin",
